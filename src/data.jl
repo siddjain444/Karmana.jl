@@ -84,21 +84,15 @@ function state_hr_district_dfs()
     spatial_ref_df = DBInterface.execute(connection, "SELECT * from spatial_ref_sys") |> DataFrame
     db_crs = spatial_ref_df.SRTEXT[begin] # TODO: use this when converting.
     # get tables for each admin level
-    state_table = do_geoquery(connection, "states")
-    hr_table = do_geoquery(connection, "homogeneous_regions")
-    district_table = do_geoquery(connection, "districts_2011")
+    district_table = do_geoquery(connection,"districts_states_hr" )
     # get rivers etc
-    shape_wkb_to_module_geom!(GeometryBasics, state_table)
-    shape_wkb_to_module_geom!(GeometryBasics, hr_table)
     shape_wkb_to_module_geom!(GeometryBasics, district_table)
     # drop missing values, since we shouldn't have any at this stage.
-    dropmissing!(state_table)
-    dropmissing!(hr_table)
     dropmissing!(district_table)
     # clean up by closing the connection
     DBInterface.close!(connection)
 
-    return state_table, hr_table, district_table
+    return district_table
 
 end
 

@@ -133,7 +133,7 @@ function __init__()
             district_df[][302, :HR_Nmbr] = 3 # Kinnaur - district name not assigned HR_Name
             district_df[][413, :HR_Nmbr] = 3 # North Sikkim - district not assigned HR_Name nor district name # 104
         end
-        hr_df[] = _prepare_merged_geom_dataframe(district_df[], :HR_Nmbr, :ST_NM; capture_fields = (:ST_NM, :ST_CD, :HR_Name))
+        hr_df[] = _prepare_merged_geom_dataframe(district_df[], :HR_Nmbr, :ST_NM; capture_fields = (:ST_NM, :ST_CD, :HR_Nmbr))
         state_df[] = _prepare_merged_geom_dataframe(district_df[], :ST_NM; capture_fields = (:ST_CD,))
 
         # finally, patch the loaded dataframes, to match the maps database
@@ -147,20 +147,16 @@ function __init__()
         has_india_data = true
 
     elseif has_maps_db_config
-        try
-            _state_df, _hr_df, _district_df = state_hr_district_dfs()
-
-            # _district_df[302, :hr_nmbr] = 3 # Kinnaur - district name not assigned HR_Name
-            # _district_df[413, :hr_nmbr] = 3 # North Sikkim - district not assigned HR_Name nor district name
-            state_df[] = _state_df
-            hr_df[] = _hr_df
-            district_df[] = _district_df
-            has_india_data = true
-        catch e
-            @warn "Failed to load data from maps database.  Falling back to shapefile."
-            @warn e
-            has_india_data = false
-        end
+        #  try
+             _district_df = state_hr_district_dfs()
+             district_df[] = _district_df
+             district_df[].geometry = GeoInterface.convert.((GeometryBasics,), district_df[].geometry)
+        # apply certain patches here, if needed
+            district_df[][302, :hr_nmbr] = 3 # Kinnaur - district name not assigned HR_Name
+            district_df[][413, :hr_nmbr] = 3 # North Sikkim - district not assigned HR_Name nor district name # 104
+            hr_df[] = _prepare_merged_geom_dataframe(district_df[], :hr_nmbr, :st_nm; capture_fields = (:st_nm, :st_cd, :hr_name))
+            state_df[] = _prepare_merged_geom_dataframe(district_df[], :st_nm; capture_fields = (:st_cd,))
+            hr_df[].hr_nmbr_str = ("HR ",) .* string.(hr_df[].hr_nmbr)
     end
 
     if !has_india_data # no shapefile path, no maps db access ⟹ use the artifact!
