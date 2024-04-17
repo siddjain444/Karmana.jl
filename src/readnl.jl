@@ -38,7 +38,7 @@ start_date = Date(2015, 01)
 end_date = Date(2020, 12)
 rad_dc, cf_dc = readnl(xlims, ylims, start_date, end_date)
 """
-function readnl(xlims = X(Rasters.Between(65.39, 99.94)), ylims = Y(Rasters.Between(5.34, 39.27)), start_date = Date(2012, 04), end_date = Date(2023, 01))
+function readnl(xlims = X(Rasters.Between(65.39, 99.94)), ylims = Y(Rasters.Between(5.34, 39.27)), start_date = Date(2012, 04), end_date = Date(today()))
     lims = xlims, ylims
     rad_path = "/mnt/giant-disk/nighttimelights/monthly/rad/"
     rad_files, sorted_dates = sort_files_by_date(rad_path, start_date, end_date)
@@ -48,8 +48,9 @@ function readnl(xlims = X(Rasters.Between(65.39, 99.94)), ylims = Y(Rasters.Betw
     cf_raster_list = [Raster(i, lazy = true)[lims...] for i in cf_path .* cf_files]
     rad_series = RasterSeries(rad_raster_list, Ti(sorted_dates))
     cf_series = RasterSeries(cf_raster_list, Ti(sorted_dates))
-    rad_datacube = Rasters.combine(rad_series, Ti)
-    cf_datacube = Rasters.combine(cf_series, Ti)
+    rad_datacube = Float16.(Rasters.combine(rad_series, Ti))
+    cf_datacube = Int8.(Rasters.combine(cf_series, Ti))
+    replace!(rad_datacube, Inf => prevfloat(typemax(rad_datacube[1,1,1])))
     return rad_datacube, cf_datacube
 end
 
@@ -75,7 +76,7 @@ end_date = Date(2020, 12)
 rad_dc, cf_dc = readnl(geom, start_date, end_date)
 ```
 """
-function readnl(geom, start_date = Date(2012, 04), end_date = Date(2023, 01))
+function readnl(geom, start_date = Date(2012, 04), end_date = today())
     rad_path = "/mnt/giant-disk/nighttimelights/monthly/rad/"
     rad_files, sorted_dates = sort_files_by_date(rad_path, start_date, end_date)
     cf_path = "/mnt/giant-disk/nighttimelights/monthly/cf/"
@@ -84,7 +85,8 @@ function readnl(geom, start_date = Date(2012, 04), end_date = Date(2023, 01))
     cf_raster_list = [crop(Raster(i, lazy = true), to = geom) for i in cf_path .* cf_files]
     rad_series = RasterSeries(rad_raster_list, Ti(sorted_dates))
     cf_series = RasterSeries(cf_raster_list, Ti(sorted_dates))
-    rad_datacube = Rasters.combine(rad_series, Ti)
-    cf_datacube = Rasters.combine(cf_series, Ti)
+    rad_datacube = Float16.(Rasters.combine(rad_series, Ti))
+    cf_datacube = Int8.(Rasters.combine(cf_series, Ti))
+    replace!(rad_datacube, Inf => prevfloat(typemax(rad_datacube[1,1,1])))
     return rad_datacube, cf_datacube
 end
